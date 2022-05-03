@@ -26,7 +26,8 @@ public class CsvParserImpl implements CsvParser {
           .withMappingStrategy(mappingStrategy)
           .build();
 
-      return parser.parse();
+      List<CsvRecord> parse = parser.parse();
+      return parse;
 
     } catch (IOException e) {
       e.printStackTrace();

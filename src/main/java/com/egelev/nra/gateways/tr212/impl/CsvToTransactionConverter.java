@@ -6,8 +6,9 @@ import com.egelev.nra.gateways.tr212.CsvRecord;
 import com.egelev.nra.gateways.tr212.SecurityExchangeResolver;
 import com.egelev.nra.model.Currency;
 import com.egelev.nra.model.InvestmentSecurity;
-import com.egelev.nra.model.TransactionType;
 import com.egelev.nra.model.Transaction;
+import com.egelev.nra.model.TransactionType;
+import com.egelev.nra.model.Worth;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -16,13 +17,13 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CsvToMoneyMovementConverter implements Converter<CsvRecord, Transaction> {
+public class CsvToTransactionConverter implements Converter<CsvRecord, Transaction> {
 
   static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("y-M-d H:m:s");
 
   private final SecurityExchangeResolver securityExchangeResolver;
 
-  public CsvToMoneyMovementConverter(
+  public CsvToTransactionConverter(
       SecurityExchangeResolver securityExchangeResolver) {
     this.securityExchangeResolver = securityExchangeResolver;
   }
@@ -44,9 +45,13 @@ public class CsvToMoneyMovementConverter implements Converter<CsvRecord, Transac
         .setExchange(convertExchange(source))
         .build();
 
+    Worth worth = new Worth(
+        source.getNumberOfShares(),
+        source.getPricePerShare(),
+        source.getWithholdingTax());
+
     return Transaction.builder()
-        .setQuantity(source.getNumberOfShares())
-        .setSinglePrice(source.getPricePerShare())
+        .setWorth(worth)
         .setTimestamp(convertTimeStamp(source.getTime()))
         .setType(type)
         .setInvestmentSecurity(investmentSecurity)
@@ -78,9 +83,6 @@ public class CsvToMoneyMovementConverter implements Converter<CsvRecord, Transac
     try{
       return Currency.valueOf(symbol);
     } catch (IllegalArgumentException e) {
-      if ("GBX".equals(symbol)) {
-        return Currency.GBP;
-      }
       return Currency.UNKNOWN;
     }
   }

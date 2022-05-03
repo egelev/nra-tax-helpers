@@ -1,12 +1,9 @@
 package com.egelev.nra.model;
 
-import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import lombok.Getter;
 
 public record Transaction (
-    BigDecimal quantity,
-    BigDecimal singlePrice,
+    Worth worth,
     ZonedDateTime timestamp,
     TransactionType type,
     InvestmentSecurity investmentSecurity
@@ -20,19 +17,14 @@ public record Transaction (
 
     private Builder() {}
 
-    BigDecimal quantity;
-    BigDecimal singlePrice;
+    Worth worth;
     ZonedDateTime timestamp;
     TransactionType type;
     InvestmentSecurity investmentSecurity;
 
-    public Builder setQuantity(BigDecimal quantity) {
-      this.quantity = quantity;
-      return this;
-    }
 
-    public Builder setSinglePrice(BigDecimal singlePrice) {
-      this.singlePrice = singlePrice;
+    public Builder setWorth(Worth worth) {
+      this.worth = worth;
       return this;
     }
 
@@ -53,8 +45,7 @@ public record Transaction (
 
     public Transaction build() {
       return new Transaction(
-          this.quantity,
-          this.singlePrice,
+          this.worth,
           this.timestamp,
           this.type,
           this.investmentSecurity
