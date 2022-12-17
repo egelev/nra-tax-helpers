@@ -8,6 +8,7 @@ import com.egelev.nra.model.Dividend;
 import com.egelev.nra.model.OpenPosition;
 import com.egelev.nra.model.SellOrder;
 import java.math.MathContext;
+import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
@@ -24,6 +25,7 @@ public class PortfolioQueryImpl implements PortfolioQuery {
   Predicate<String> allowsTickerSymbol;
   Predicate<String> allowsExchange;
   Predicate<Currency> allowsCurrency;
+  Predicate<ZonedDateTime> allowsTimestamp;
 
   public PortfolioQueryImpl(
       Portfolio portfolio,
@@ -34,6 +36,7 @@ public class PortfolioQueryImpl implements PortfolioQuery {
     this.allowsTickerSymbol = x -> true;
     this.allowsExchange = x -> true;
     this.allowsCurrency = x -> true;
+    this.allowsTimestamp = x -> true;
   }
 
   public PortfolioQuery filterByTickerSymbol(
@@ -62,6 +65,20 @@ public class PortfolioQueryImpl implements PortfolioQuery {
     return this;
   }
 
+  public PortfolioQuery filterByDate(ZonedDateTime after, ZonedDateTime before) {
+    Predicate<ZonedDateTime> isAfter = Optional.ofNullable(after)
+        .<Predicate<ZonedDateTime>>map(a -> (ZonedDateTime ts) -> ts.isEqual(a) || ts.isAfter(a))
+        .orElse(x -> true);
+
+    Predicate<ZonedDateTime> isBefore = Optional.ofNullable(before)
+        .<Predicate<ZonedDateTime>>map(b -> (ZonedDateTime ts) -> ts.isBefore(b) || ts.isBefore(b))
+        .orElse(x -> true);
+
+
+    this.allowsTimestamp = isAfter.and(isBefore);
+    return this;
+  }
+
   public Portfolio execute() {
     Set<OpenPosition> filteredOpenPositions = this.portfolio.getOpenPositions()
         .stream()
@@ -75,6 +92,7 @@ public class PortfolioQueryImpl implements PortfolioQuery {
         .filter(so -> allowsTickerSymbol.test(so.transaction().investmentSecurity().tickerSymbol()))
         .filter(so -> allowsExchange.test(so.transaction().investmentSecurity().exchange()))
         .filter(so -> allowsCurrency.test(so.transaction().investmentSecurity().currency()))
+        .filter(so -> allowsTimestamp.test(so.transaction().timestamp()))
         .collect(Collectors.toSet());
 
     Set<Dividend> filteredDividends = this.portfolio.getDividends()
@@ -82,6 +100,7 @@ public class PortfolioQueryImpl implements PortfolioQuery {
         .filter(d -> allowsTickerSymbol.test(d.transaction().investmentSecurity().tickerSymbol()))
         .filter(d -> allowsExchange.test(d.transaction().investmentSecurity().exchange()))
         .filter(d -> allowsCurrency.test(d.transaction().investmentSecurity().currency()))
+        .filter(d -> allowsTimestamp.test(d.transaction().timestamp()))
         .collect(Collectors.toSet());
 
     return new PortfolioImpl(filteredOpenPositions, filteredSellOrders, filteredDividends, mathContext);

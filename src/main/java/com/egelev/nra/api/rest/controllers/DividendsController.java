@@ -8,9 +8,12 @@ import com.egelev.nra.api.rest.resources.DividendResource;
 import com.egelev.nra.model.Currency;
 import com.egelev.nra.model.Dividend;
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,10 +34,13 @@ public class DividendsController {
   public List<DividendResource> get(
       @RequestParam(value = "localCurrency", defaultValue = "BGN") Currency localCurrency,
       @RequestParam(value = "exchange", required = false) List<String> exchanges,
-      @RequestParam(value = "ticker", required = false) List<String> tickers
+      @RequestParam(value = "ticker", required = false) List<String> tickers,
+      @RequestParam(value = "after", required = false) @DateTimeFormat(iso = ISO.DATE_TIME) ZonedDateTime after,
+      @RequestParam(value = "before", required = false) @DateTimeFormat(iso = ISO.DATE_TIME) ZonedDateTime before
   ) {
+
     Portfolio portfolio = temporaryUtils.buildNewPortfolioFromFiles();
-    List<Dividend> dividends = queryFilter.applyFilters(portfolio, exchanges, tickers).getDividends();
+    List<Dividend> dividends = queryFilter.applyFilters(portfolio, exchanges, tickers, after, before).getDividends();
     List<DividendResource> result = dividendsConverter.convert(dividends, localCurrency);
 
     return result;
@@ -44,9 +50,12 @@ public class DividendsController {
   public Map<String, BigDecimal> getSummary(
       @RequestParam(value = "localCurrency", defaultValue = "BGN") Currency localCurrency,
       @RequestParam(value = "exchange", required = false) List<String> exchanges,
-      @RequestParam(value = "ticker", required = false) List<String> tickers
+      @RequestParam(value = "ticker", required = false) List<String> tickers,
+      @RequestParam(value = "after", required = false) @DateTimeFormat(iso = ISO.DATE_TIME) ZonedDateTime after,
+      @RequestParam(value = "before", required = false) @DateTimeFormat(iso = ISO.DATE_TIME) ZonedDateTime before
   ) {
-    List<DividendResource> dividendResources = get(localCurrency, exchanges, tickers);
+
+    List<DividendResource> dividendResources = get(localCurrency, exchanges, tickers, after, before);
 
     BigDecimal totalIncomeLocalCurrency = dividendResources.stream()
         .map(DividendResource::totalIncomeLocalCurrency)

@@ -8,12 +8,15 @@ import com.egelev.nra.api.rest.resources.SellOrderResource;
 import com.egelev.nra.api.rest.resources.SellSummaryResource;
 import com.egelev.nra.model.Currency;
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -36,11 +39,14 @@ public class SellsController {
   public List<SellOrderResource> get(
       @RequestParam(value = "localCurrency", defaultValue = "BGN") Currency localCurrency,
       @RequestParam(value = "exchange", required = false) List<String> exchanges,
-      @RequestParam(value = "ticker", required = false) List<String> tickers) {
+      @RequestParam(value = "ticker", required = false) List<String> tickers,
+      @RequestParam(value = "after", required = false) @DateTimeFormat(iso = ISO.DATE_TIME) ZonedDateTime after,
+      @RequestParam(value = "before", required = false) @DateTimeFormat(iso = ISO.DATE_TIME) ZonedDateTime before
+      ) {
 
     Portfolio portfolio = temporaryUtils.buildNewPortfolioFromFiles();
 
-    return queryFilter.applyFilters(portfolio, exchanges, tickers)
+    return queryFilter.applyFilters(portfolio, exchanges, tickers, after, before)
         .getSellOrders().stream()
         .map(so -> sellOrderConverter.convert(so, localCurrency))
         .collect(Collectors.toList());
@@ -50,10 +56,12 @@ public class SellsController {
   public List<SellSummaryResource> summarizeTickers(
       @RequestParam(value = "localCurrency", defaultValue = "BGN") Currency localCurrency,
       @RequestParam(value = "exchange", required = false) List<String> exchanges,
-      @RequestParam(value = "ticker", required = false) List<String> tickers
+      @RequestParam(value = "ticker", required = false) List<String> tickers,
+      @RequestParam(value = "after", required = false) @DateTimeFormat(iso = ISO.DATE_TIME) ZonedDateTime after,
+      @RequestParam(value = "before", required = false) @DateTimeFormat(iso = ISO.DATE_TIME) ZonedDateTime before
   ) {
 
-    List<SellSummaryResource> sellSummaries = get(localCurrency, exchanges, tickers)
+    List<SellSummaryResource> sellSummaries = get(localCurrency, exchanges, tickers, after, before)
         .stream()
         .collect(Collectors.groupingBy(so -> so.investmentSecurityResource().isin()))
         .values().stream()
@@ -69,9 +77,12 @@ public class SellsController {
   public Map<String, BigDecimal> getProfitAndLoss(
       @RequestParam(value = "localCurrency", defaultValue = "BGN") Currency localCurrency,
       @RequestParam(value = "exchange", required = false) List<String> exchanges,
-      @RequestParam(value = "ticker", required = false) List<String> tickers) {
+      @RequestParam(value = "ticker", required = false) List<String> tickers,
+      @RequestParam(value = "after", required = false) @DateTimeFormat(iso = ISO.DATE_TIME) ZonedDateTime after,
+      @RequestParam(value = "before", required = false) @DateTimeFormat(iso = ISO.DATE_TIME) ZonedDateTime before
+  ) {
 
-    List<SellOrderResource> sells = this.get(localCurrency, exchanges, tickers);
+    List<SellOrderResource> sells = this.get(localCurrency, exchanges, tickers, after, before);
 
     BigDecimal totalBuyLocalCurrency = sells.stream()
         .map(SellOrderResource::totalBuyLocalCurrency)
