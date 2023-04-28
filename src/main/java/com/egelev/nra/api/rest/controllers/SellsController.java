@@ -101,6 +101,7 @@ public class SellsController {
         .reduce(BigDecimal.ZERO, BigDecimal::add);
 
     return Map.of(
+        "P&L", profit.add(loss),
         "profit", profit,
         "loss", loss,
         "totalBuyLocalCurrency", totalBuyLocalCurrency,

@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class SecurityExchangeResolver {
 
-  private static final Pattern p = Pattern.compile("^(?<key>[\\w-'&\\s]+)=(?<value>[\\w-'&\\s]*)$", Pattern.CASE_INSENSITIVE);
+  private static final Pattern p = Pattern.compile("^(?<key>[\\w-'&\\\\(\\\\)\\s]+)=(?<value>[\\w-'&\\s]*)$", Pattern.CASE_INSENSITIVE);
   private static final String UNKNOWN = "Unknown";
 
   private final Path mapFilePath;
